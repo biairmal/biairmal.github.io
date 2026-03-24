@@ -15,7 +15,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <div className="flex min-h-screen w-full max-w-7xl flex-col items-center justify-between py-16 px-6 md:py-32 md:px-16 bg-zinc-50 dark:bg-black sm:items-start">
+      <div className="flex min-h-screen w-full max-w-7xl flex-col items-center justify-between bg-zinc-50 px-6 py-24 dark:bg-black md:px-16 md:py-32 sm:items-start">
         <div className="flex flex-col space-y-8 text-lg max-w-xl">
           <h1 className="text-5xl font-medium pb-8">Bandana Irmal Abdillah</h1>
           <p className="">
@@ -57,6 +57,27 @@ export default function Home() {
             Outside of programming, I enjoy exploring new foods, playing video
             games, and playing my guitar. Feel free to connect with me!
           </p>
+
+          <section id="contacts" className="scroll-mt-24 space-y-2 border-t border-zinc-300 pt-8 dark:border-zinc-700">
+            <h2 className="text-2xl font-medium">Contacts</h2>
+            <p>
+              You can reach me by email at{" "}
+              <a
+                href="mailto:bandana.irmal@gmail.com"
+                className="underline decoration-zinc-500 underline-offset-4 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+              >
+                bandanairmal@gmail.com
+              </a>
+              ,<br /> or my LinkedIn profile at{" "}
+              <a
+                href="https://www.linkedin.com/in/bandanairmal/"
+                className="underline decoration-zinc-500 underline-offset-4 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+              >
+                bandanairmal
+              </a>
+              .
+            </p>
+          </section>
         </div>
       </div>
     </div>

@@ -5,9 +5,9 @@ import Footer from "@/components/Footer";
 const MainLayout = (props: React.PropsWithChildren) => {
   return (
     <div>
-      {/* <Header /> */}
+      <Header />
       {props.children}
-      {/* <Footer /> */}
+      <Footer />
     </div>
   );
 };
