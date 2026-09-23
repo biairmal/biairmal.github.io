@@ -1,4 +1,5 @@
 import HeroCanvas from "@/components/HeroCanvas";
+import SlashText from "@/components/SlashText";
 
 const Hero = ({ years }: { years: number }) => (
   <section className="relative overflow-hidden font-sans xl:h-[920px]">
@@ -28,11 +29,7 @@ const Hero = ({ years }: { years: number }) => (
             href="#contacts"
             className="slash inline-flex h-[52px] items-center justify-center gap-3 bg-foreground px-7 text-[15px] font-medium text-background xl:h-[54px]"
           >
-            <span className="slash-text">
-              <span className="slash-top">Start a project</span>
-              <span className="slash-bottom" aria-hidden="true">Start a project</span>
-            </span>
-            <span className="slash-line" aria-hidden="true" />
+            <SlashText>Start a project</SlashText>
             <svg className="hidden xl:block" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" aria-hidden="true">
               <path d="M2 8h11M9 4l4 4-4 4" />
             </svg>

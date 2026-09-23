@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import SlashText from "@/components/SlashText";
 
 // Recent work (NDA): fill these in. The first entry starts expanded.
 const WORK = [
@@ -242,11 +243,7 @@ export const Contact = () => (
       href="mailto:bandana.irmal@gmail.com"
       className="slash inline-flex items-center gap-2.5 self-start border-b border-foreground/25 pb-1.5 text-[22px] font-medium tracking-[-0.02em] xl:gap-4 xl:text-4xl xl:tracking-[-0.03em]"
     >
-      <span className="slash-text">
-        <span className="slash-top">bandanairmal@gmail.com</span>
-        <span className="slash-bottom" aria-hidden="true">bandanairmal@gmail.com</span>
-      </span>
-      <span className="slash-line" aria-hidden="true" />
+      <SlashText>bandanairmal@gmail.com</SlashText>
       <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" className="size-[18px] xl:size-[26px]" aria-hidden="true">
         <path d="M7 19L19 7M9 7h10v10" />
       </svg>

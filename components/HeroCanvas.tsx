@@ -70,6 +70,16 @@ const HeroCanvas = ({ className }: { className?: string }) => {
       },
     };
 
+    // Stacked (mobile/tablet) layout: the hero text scrolls up over the samurai, so the
+    // background dims a little once scrolling starts, and returns as the samurai turns to dust.
+    const dim = () => {
+      const d = mq.matches ? 0 : ramp(window.scrollY, 0, 160) * (1 - env.leave());
+      cv.style.opacity = d ? String(1 - 0.45 * d) : "";
+    };
+    dim();
+    window.addEventListener("scroll", dim, { passive: true });
+    mq.addEventListener("change", dim);
+
     let scene: ReturnType<typeof startScene> | null = null, built = "", timer = 0;
     const build = () => {
       const c = cv.getBoundingClientRect(), f = frame.getBoundingClientRect(), h = hero.getBoundingClientRect();
@@ -115,6 +125,8 @@ const HeroCanvas = ({ className }: { className?: string }) => {
     ro.observe(cv);
     ro.observe(frame);
     return () => {
+      window.removeEventListener("scroll", dim);
+      mq.removeEventListener("change", dim);
       clearTimeout(timer);
       ro.disconnect();
       themeObs.disconnect();
