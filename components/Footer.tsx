@@ -1,77 +1,64 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Logo, NAV, ShojiLink, useJakartaTime } from "@/components/chrome";
+
+const label = "font-mono text-[11px] uppercase tracking-[0.1em] text-neutral-500 dark:text-[#8b8b8b]";
+const underline = "self-start border-b border-transparent pb-[3px] transition-colors hover:border-foreground/50";
 
 const Footer = () => {
-  const [jakartaTime, setJakartaTime] = useState("");
-
-  useEffect(() => {
-    const formatter = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Asia/Jakarta",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-
-    const updateTime = () => {
-      setJakartaTime(formatter.format(new Date()));
-    };
-
-    updateTime();
-    const intervalId = window.setInterval(updateTime, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, []);
+  const time = useJakartaTime();
 
   return (
-    <footer className="border-t border-zinc-200/70 bg-white/70 dark:border-zinc-800 dark:bg-zinc-950/70">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-8 md:px-16 md:py-10">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <Link href="/" className="font-mono text-lg tracking-tight text-zinc-950 dark:text-zinc-50">
-            biairmal
-            <span
-              aria-hidden="true"
-              className="terminal-cursor ml-1 inline-block h-[1.1em] w-[0.62ch] align-[-0.12em] bg-zinc-700 dark:bg-zinc-200"
-            />
-          </Link>
-
-          <nav className="flex flex-wrap items-center gap-2 text-sm">
-            <a
-              href="/"
-              className="rounded-md px-3 py-2 text-zinc-800 transition-colors hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-white"
-            >
-              Home
-            </a>
-            <a
-              href="/#contacts"
-              className="rounded-md px-3 py-2 text-zinc-800 transition-colors hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-white"
-            >
-              Contacts
-            </a>
-            <a
-              href="/blogs"
-              className="rounded-md px-3 py-2 text-zinc-800 transition-colors hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-white"
-            >
-              Blogs
-            </a>
+    <footer className="border-t border-foreground/10 bg-background/55 font-sans backdrop-blur-sm">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-5 py-8 md:gap-10 md:px-16 md:py-10">
+        <div className="flex flex-col gap-7 md:flex-row md:items-center md:justify-between">
+          <Logo />
+          <nav aria-label="Footer" className="-ml-3 flex flex-wrap gap-1 md:ml-0 md:gap-2">
+            {NAV.map((n) => (
+              <ShojiLink key={n.href} href={n.href}>
+                {n.label}
+              </ShojiLink>
+            ))}
           </nav>
         </div>
 
-        <div className="flex flex-col gap-1 text-sm text-zinc-700 dark:text-zinc-300">
-          <p>
-            Contacts:{" "}
-            <a
-              href="mailto:bandana.irmal@gmail.com"
-              className="underline decoration-zinc-500 underline-offset-4 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
-            >
+        <div className="flex flex-col gap-5 md:grid md:grid-cols-3 md:gap-12">
+          <div className="flex flex-col gap-2.5">
+            <span className={label}>Contact</span>
+            <a href="mailto:bandana.irmal@gmail.com" className={`${underline} text-[15px]`}>
               bandanairmal@gmail.com
             </a>
-          </p>
-          <p className="font-mono">Jakarta local time: {jakartaTime}</p>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <span className={label}>Local time</span>
+            <span className="font-mono text-[15px] tabular-nums">
+              {time || "--:--:--"} <span className="text-neutral-500 dark:text-[#8b8b8b]">Jakarta · UTC+7</span>
+            </span>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <span className={label}>Elsewhere</span>
+            <span className="flex gap-5 text-[15px]">
+              <a href="https://github.com/biairmal" className={underline}>
+                GitHub
+              </a>
+              <a href="https://www.linkedin.com/in/bandanairmal/" className={underline}>
+                LinkedIn
+              </a>
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2.5 font-mono text-[11px] text-neutral-500 md:flex-row md:items-center md:justify-between md:text-xs dark:text-[#8b8b8b]">
+          <span className="md:order-2 flex items-center gap-2 md:gap-2.5">
+            <span lang="ja" className="font-jp text-[13px] text-neutral-600 md:text-sm dark:text-neutral-400">
+              侍
+            </span>
+            Planned, built and shipped by hand
+          </span>
+          <span className="md:order-1">© {new Date().getFullYear()} Bandana Irmal Abdillah</span>
+          <a href="#" className={`md:order-3 inline-flex min-h-11 items-center md:min-h-0 ${underline}`}>
+            Back to top ↑
+          </a>
         </div>
       </div>
     </footer>

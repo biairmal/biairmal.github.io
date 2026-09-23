@@ -227,10 +227,10 @@ export const Toolkit = () => (
   </section>
 );
 
-// id="contacts" matches the Header and Footer links. At least a screen tall: the contact
-// scene (small moon, second samurai) plays behind it.
+// id="contacts" matches the Header and Footer links. Tall enough (with the footer below) that the
+// contact scene (small moon, second samurai) has the screen to itself when it arrives.
 export const Contact = () => (
-  <section id="contacts" className={`${container} flex min-h-[900px] scroll-mt-20 flex-col gap-7 pt-28 pb-16 xl:min-h-[960px] xl:gap-12 xl:pt-[180px]`}>
+  <section id="contacts" className={`${container} flex min-h-[640px] scroll-mt-20 flex-col gap-7 pt-28 pb-16 xl:min-h-[760px] xl:gap-12 xl:pt-[180px]`}>
     <SectionLabel kanji="連">Contact</SectionLabel>
     <h2 className="text-[44px] leading-[1.02] font-medium tracking-[-0.05em] xl:text-[104px] xl:leading-none xl:tracking-[-0.055em]">
       Have something<br className="hidden xl:inline" /> that needs to ship?

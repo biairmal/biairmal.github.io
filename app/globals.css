@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Tailwind v4 dropped the pointer cursor on buttons; restore it (theme toggle, menu buttons, …). */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -156,5 +164,120 @@ body {
   100% {
     clip-path: inset(0 0 0 0);
     opacity: 0;
+  }
+}
+
+/* Shoji hover (<ShojiLink>): two lattice panels slide in from the sides and close in the
+   middle. The label's two clipped copies (.shoji-l / .shoji-r) are revealed in exact step with
+   each panel — same duration and easing — so the text turns dark only where a panel covers it. */
+:root {
+  --shoji-grid: color-mix(in srgb, var(--background) 13%, transparent);
+  --shoji-seam: color-mix(in srgb, var(--background) 40%, transparent);
+}
+
+.shoji {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  overflow: hidden;
+}
+
+.shoji::before,
+.shoji::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background-color: var(--foreground);
+  background-image: linear-gradient(90deg, var(--shoji-grid) 1px, transparent 1px), linear-gradient(var(--shoji-grid) 1px, transparent 1px);
+  background-size: 33.34% 100%, 100% 33.34%;
+  transition: transform 0.42s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.shoji::before {
+  left: 0;
+  transform: translateX(-101%);
+  box-shadow: inset -1px 0 0 var(--shoji-seam);
+}
+
+.shoji::after {
+  right: 0;
+  transform: translateX(101%);
+  box-shadow: inset 1px 0 0 var(--shoji-seam);
+}
+
+.shoji-l,
+.shoji-r {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--background);
+  transition: clip-path 0.42s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.shoji-l {
+  clip-path: inset(0 100% 0 0);
+}
+
+.shoji-r {
+  clip-path: inset(0 0 0 100%);
+}
+
+.shoji:hover::before,
+.shoji:hover::after,
+.shoji:focus-visible::before,
+.shoji:focus-visible::after {
+  transform: translateX(0);
+}
+
+.shoji:hover .shoji-l,
+.shoji:focus-visible .shoji-l {
+  clip-path: inset(0 50% 0 0);
+}
+
+.shoji:hover .shoji-r,
+.shoji:focus-visible .shoji-r {
+  clip-path: inset(0 0 0 50%);
+}
+
+/* Mobile menu panel: a faint shoji lattice; it slides in, the page dims, the rows rise in. */
+.shoji-lattice {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--foreground) 3.5%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--foreground) 3.5%, transparent) 1px, transparent 1px);
+  background-size: 55px 100%, 100% 110px;
+}
+
+@keyframes shoji-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes menu-dim {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes menu-rise {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
