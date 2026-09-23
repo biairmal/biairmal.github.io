@@ -1,85 +1,31 @@
-// import Image from "next/image";
+import Hero from "@/components/Hero";
+import { About, Approach, Contact, Toolkit, Work } from "@/components/HomeSections";
 
 const careerStartDate = new Date(2021, 6, 1);
 
-export default function Home() {
-  function getAge(date: Date) {
-    const today = new Date();
-    let age = today.getFullYear() - date.getFullYear();
-    const m = today.getMonth() - date.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < date.getDate())) {
-      age--;
-    }
-    return age;
+function getAge(date: Date) {
+  const today = new Date();
+  let age = today.getFullYear() - date.getFullYear();
+  const m = today.getMonth() - date.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < date.getDate())) {
+    age--;
   }
+  return age;
+}
+
+export default function Home() {
+  const years = getAge(careerStartDate);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <div className="flex min-h-screen w-full max-w-7xl flex-col items-center justify-between bg-zinc-50 px-6 py-24 dark:bg-black md:px-16 md:py-32 sm:items-start">
-        <div className="flex flex-col space-y-8 text-lg max-w-xl">
-          <h1 className="text-5xl font-medium pb-8">Bandana Irmal Abdillah</h1>
-          <p className="">
-            Hi there! I’m an experienced software engineer based in Jakarta,
-            Indonesia, with over {getAge(careerStartDate)} years of experience
-            building digital products. I primarily focus on backend development,
-            but I’m also comfortable working on frontend applications when
-            needed.
-          </p>
-          <p>
-            I currently work at a software house where I collaborate with
-            different clients and work with various technologies across multiple
-            projects. Before starting my career as a software engineer, I earned
-            a Bachelor’s degree in Computer Science from{" "}
-            <a>Universitas Padjadjaran</a>. I also occasionally take on
-            freelance projects to work on new challenges and continue improving
-            my skills.
-          </p>
-          <p>
-            Over the years, I’ve developed experience with various technologies
-            and tools while building and maintaining software systems. Some of
-            the technologies I’ve worked with include:
-          </p>
-          <ul>
-            <li>
-              <b>Backend:</b> .Net Core, Spring Boot (Java), Golang, Node.js
-            </li>
-            <li>
-              <b>Frontend:</b> React.js, Next.js, Blazor, TailwindCSS
-            </li>
-            <li>
-              <b>Database:</b> PostgreSQL, SQLServer, Oracle, CosmosDB, Redis
-            </li>
-            <li>
-              <b>DevOps:</b> Docker, CI/CD Pipelines, Azure, AWS
-            </li>
-          </ul>
-          <p>
-            Outside of programming, I enjoy exploring new foods, playing video
-            games, and playing my guitar. Feel free to connect with me!
-          </p>
-
-          <section id="contacts" className="scroll-mt-24 space-y-2 border-t border-zinc-300 pt-8 dark:border-zinc-700">
-            <h2 className="text-2xl font-medium">Contacts</h2>
-            <p>
-              You can reach me by email at{" "}
-              <a
-                href="mailto:bandana.irmal@gmail.com"
-                className="underline decoration-zinc-500 underline-offset-4 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                bandanairmal@gmail.com
-              </a>
-              ,<br /> or my LinkedIn profile at{" "}
-              <a
-                href="https://www.linkedin.com/in/bandanairmal/"
-                className="underline decoration-zinc-500 underline-offset-4 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                bandanairmal
-              </a>
-              .
-            </p>
-          </section>
-        </div>
-      </div>
+    <div className="font-sans">
+      <Hero years={years} />
+      {/* Quiet stretch: only the background moves while the samurai blows away and the moon wanes. */}
+      <div aria-hidden="true" className="h-[max(560px,calc(100lvh-280px))] xl:h-[max(640px,calc(100lvh-260px))]" />
+      <About years={years} />
+      <Approach />
+      <Work />
+      <Toolkit />
+      <Contact />
     </div>
   );
 }
