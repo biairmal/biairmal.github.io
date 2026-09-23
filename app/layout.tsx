@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 // Only used for a few kanji; the browser fetches just the unicode-range chunks it needs.
 const notoSerifJp = Noto_Serif_JP({
   variable: "--font-noto-serif-jp",
-  weight: "400",
+  weight: ["400", "600"], // 600: the 侍 in the logo
   preload: false,
 });
 

@@ -55,6 +55,9 @@ const PLAY_IN = 0.9; // seconds for the whole draw-and-cut once triggered
 const PLAY_OUT = 1.6; // seconds to play it back in reverse
 // Crescent: the shadow disc sits up-left of the moon, so the lit sliver faces down-right.
 const SHADE: [number, number] = [-0.97, -0.24];
+// shadow disc radius (× moon radius): fully dark inside SHADOW_IN, fading out by SHADOW_OUT
+const SHADOW_IN = 1.02;
+const SHADOW_OUT = 1.22;
 
 type Dot = { k: number; bx: number; by: number; w: number; u: number; n: number; dx: number; dy: number; x: number; y: number; vx: number; vy: number; ph: number; r: number; a: number; dz: number; e: number; th: number };
 type Flake = { x: number; y: number; vx: number; vy: number; s: number; rot: number; vr: number; ph: number };
@@ -233,9 +236,10 @@ export function startScene(cv: HTMLCanvasElement, cfg: SceneConfig, intro: boole
   const cctx = cresCv.getContext("2d")!;
   let shade = 1e4, lastCres = -1;
   const renderCrescent = (k: number, e: number) => {
-    // waning: the shadow slides in from up-left to a sliver; eclipse: it keeps going, through
-    // new moon at the centre and off the other side, uncovering the moon in blood red
-    shade = e > 0 ? MR * (0.4 - 2.7 * e) : MR * (2.3 - 1.9 * k);
+    // one continuous slide for both phases (so a fast scroll, with both easing at once, can
+    // never make the shadow jump): waning takes it from clear of the moon to a sliver, the
+    // eclipse carries it on through new moon (shade 0) and off the other side
+    shade = MR * (2.45 - 1.9 * k - 3 * e);
     const red = smooth(seg(e, 0.4, 0.8));
     cctx.globalCompositeOperation = "source-over";
     cctx.clearRect(0, 0, cresCv.width, cresCv.height);
@@ -244,9 +248,16 @@ export function startScene(cv: HTMLCanvasElement, cfg: SceneConfig, intro: boole
     cctx.globalAlpha = red;
     cctx.drawImage(bloodCv, 0, 0);
     cctx.globalAlpha = 1;
+    // the shadow disc: solid to SHADOW_IN, then a soft falloff to SHADOW_OUT, so the terminator
+    // between the dark and lit side is blurred instead of a hard edge
+    const sx = (MS / 2 + SHADE[0] * shade) * dpr, sy = (MS / 2 + SHADE[1] * shade) * dpr;
+    const soft = cctx.createRadialGradient(sx, sy, MR * SHADOW_IN * dpr, sx, sy, MR * SHADOW_OUT * dpr);
+    soft.addColorStop(0, "rgba(0,0,0,1)");
+    soft.addColorStop(1, "rgba(0,0,0,0)");
     cctx.globalCompositeOperation = "destination-out";
+    cctx.fillStyle = soft;
     cctx.beginPath();
-    cctx.arc((MS / 2 + SHADE[0] * shade) * dpr, (MS / 2 + SHADE[1] * shade) * dpr, MR * 1.02 * dpr, 0, 6.2832);
+    cctx.arc(sx, sy, MR * SHADOW_OUT * dpr, 0, 6.2832);
     cctx.fill();
     cctx.globalCompositeOperation = "source-over";
   };
@@ -256,8 +267,9 @@ export function startScene(cv: HTMLCanvasElement, cfg: SceneConfig, intro: boole
   const inMoon = (x: number, y: number) => {
     const dx = x - mcx, dy = y - mcy;
     if (dx * dx + dy * dy >= mr * mr * 0.985) return false;
-    const sx = dx - SHADE[0] * shade * msc, sy = dy - SHADE[1] * shade * msc;
-    return sx * sx + sy * sy > mr * mr * 1.04;
+    // lit = past the middle of the shadow's soft edge
+    const sx = dx - SHADE[0] * shade * msc, sy = dy - SHADE[1] * shade * msc, lit = (SHADOW_IN + SHADOW_OUT) / 2;
+    return sx * sx + sy * sy > mr * mr * lit * lit;
   };
 
   // drifting clouds across the moon (dark dot bands)

@@ -70,6 +70,16 @@ const HeroCanvas = ({ className }: { className?: string }) => {
       },
     };
 
+    // Stacked (mobile/tablet) layout: the hero text scrolls up over the samurai, so the
+    // background dims a little once scrolling starts, and returns as the samurai turns to dust.
+    const dim = () => {
+      const d = mq.matches ? 0 : ramp(window.scrollY, 0, 160) * (1 - env.leave());
+      cv.style.opacity = d ? String(1 - 0.45 * d) : "";
+    };
+    dim();
+    window.addEventListener("scroll", dim, { passive: true });
+    mq.addEventListener("change", dim);
+
     let scene: ReturnType<typeof startScene> | null = null, built = "", timer = 0;
     const build = () => {
       const c = cv.getBoundingClientRect(), f = frame.getBoundingClientRect(), h = hero.getBoundingClientRect();
@@ -81,15 +91,15 @@ const HeroCanvas = ({ className }: { className?: string }) => {
       // the canvas is fixed at the top of the screen; the hero is at the top of the page
       const ox = f.left - c.left + base.ox * fs, oy = f.top - h.top + base.oy * fs;
       // contact scene, from the design boards (1440×900, 390×844): a small moon up-right and a
-      // smaller samurai below it, facing it
-      const cS = (desk ? 0.6 : 0.3) * fs;
+      // smaller samurai below it, facing it, feet clear of the footer at the page bottom
+      const cS = (desk ? 0.5 : 0.3) * fs;
       const contact = desk
-        ? { ox: W - 436 * fs, oy: H - 100 * fs - 692 * cS, S: cS }
-        : { ox: W - 143 * fs, oy: H - 84 * fs - 692 * cS, S: cS };
+        ? { ox: W - 416 * fs, oy: H - 250 * fs - 692 * cS, S: cS }
+        : { ox: W - 143 * fs, oy: H - 330 * fs - 692 * cS, S: cS };
       path = {
         par: desk ? 0.05 : 0.03,
         hm: { x: ox + 330 * S, y: oy + 300 * S },
-        cm: desk ? { x: W - 140 * fs, y: 230 * fs, s: 0.32 } : { x: W - 60 * fs, y: 150 * fs, s: 0.24 },
+        cm: desk ? { x: W - 130 * fs, y: 200 * fs, s: 0.3 } : { x: W - 60 * fs, y: 130 * fs, s: 0.24 },
       };
       scene?.stop();
       scene = startScene(cv, {
@@ -115,6 +125,8 @@ const HeroCanvas = ({ className }: { className?: string }) => {
     ro.observe(cv);
     ro.observe(frame);
     return () => {
+      window.removeEventListener("scroll", dim);
+      mq.removeEventListener("change", dim);
       clearTimeout(timer);
       ro.disconnect();
       themeObs.disconnect();
