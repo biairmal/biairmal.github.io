@@ -4,34 +4,42 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --moon: #d4ccbd;
+  --accent: #c4453f; /* pulse dot, open work row, the blood moon */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-jp: var(--font-noto-serif-jp), serif;
 }
 
 :root.dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --moon: #e8e4dc;
 }
 
 :root.light {
   --background: #ffffff;
   --foreground: #171717;
+  --moon: #d4ccbd;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #ffffff;
     --foreground: #171717;
+    --moon: #d4ccbd;
   }
 
   :root:not(.light):not(.dark) {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --moon: #e8e4dc;
   }
 }
 
@@ -58,4 +66,94 @@ body {
 
 .terminal-cursor {
   animation: terminal-cursor-blink 0.8s steps(1, end) infinite;
+}
+
+@keyframes hero-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes hero-drip {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(200%);
+  }
+}
+
+/* Katana-cut link: on hover the label splits along a diagonal and a cut line flashes. */
+.slash {
+  position: relative;
+}
+
+.slash-text {
+  position: relative;
+  display: block;
+}
+
+.slash-top,
+.slash-bottom {
+  display: block;
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s;
+}
+
+.slash-top {
+  clip-path: polygon(0 0, 100% 0, 100% 40%, 0 64%);
+}
+
+.slash-bottom {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 64%, 100% 40%, 100% 100%, 0 100%);
+}
+
+.slash-line {
+  position: absolute;
+  left: -6%;
+  top: 51%;
+  width: 112%;
+  height: 1px;
+  background: currentColor;
+  transform-origin: 0 50%;
+  transform: rotate(-9deg) scaleX(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.slash:hover .slash-top,
+.slash:focus-visible .slash-top,
+.slash:active .slash-top {
+  transform: translate(-4px, -2px);
+}
+
+.slash:hover .slash-bottom,
+.slash:focus-visible .slash-bottom,
+.slash:active .slash-bottom {
+  transform: translate(4px, 2px);
+}
+
+.slash:hover .slash-line,
+.slash:focus-visible .slash-line {
+  animation: slash-cut 0.55s ease-out forwards;
+}
+
+@keyframes slash-cut {
+  0% {
+    transform: rotate(-9deg) scaleX(0);
+    opacity: 1;
+  }
+  40% {
+    transform: rotate(-9deg) scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-9deg) scaleX(1);
+    opacity: 0;
+  }
 }
