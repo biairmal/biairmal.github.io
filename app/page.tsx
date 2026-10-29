@@ -1,7 +1,7 @@
 import Hero from "@/components/Hero";
 import { About, Approach, Contact, Toolkit, Work } from "@/components/HomeSections";
 
-const careerStartDate = new Date(2021, 6, 1);
+const careerStartDate = new Date(2022, 9, 1);
 
 function getAge(date: Date) {
   const today = new Date();

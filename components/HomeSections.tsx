@@ -74,7 +74,7 @@ const SectionLabel = ({ kanji, children }: { kanji: string; children: ReactNode 
 export const About = ({ years }: { years: number }) => {
   const facts = [
     ["Based in", "Jakarta, Indonesia · UTC+7"],
-    ["Experience", `${years}+ years, since 2021`],
+    ["Experience", `${years}+ years, since 2022`],
     ["Focus", "Backend, full-stack when needed"],
     ["Education", "B.Sc. Computer Science, Universitas Padjadjaran"],
   ];
