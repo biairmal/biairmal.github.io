@@ -1,39 +1,45 @@
 import type { ReactNode } from "react";
 import SlashText from "@/components/SlashText";
 
-// Recent work (NDA): fill these in. The first entry starts expanded.
+// Recent work (NDA): client names stay out, generic descriptions only. The first entry starts expanded.
 const WORK = [
   {
-    title: "[Project type — e.g. Internal payments platform]",
-    meta: "[COMPANY] · [YEAR] · [Your role]",
-    problem: "[What was broken, slow or missing — and why it mattered to the business or users.]",
-    approach: "[What you planned and built. Name the one technical decision that made the difference.]",
-    result: "[Outcome — e.g. processing time cut from hours to minutes]",
-    stack: ["[TECH]", "[TECH]", "[TECH]", "[TECH]"],
+    title: "Mobile banking backend rewrite",
+    meta: "Major Indonesian bank · 2025 – now · Software Engineer, team lead",
+    problem:
+      "A bank-scale mobile banking backend written in Java was being rewritten into Go alongside AWS. The bill payment services alone were 40k–80k lines, with near-identical code repeated for every biller and a cache lookup that failed with no fallback.",
+    approach:
+      "Led a joint team of 6–12 engineers, including the bank's own developers. Rebuilt the inquiry, payment, scheduled payment and fraud detection flows around a Factory pattern so every biller shares one structure, added database and API fallbacks behind the cache, and checked the AI-assisted rewrite with an automated review against the legacy Java API.",
+    result: "Bill payment cut to ~7.6k lines of Go (80–90% less code) and 382 → 280 man-days of effort",
+    stack: ["Go", "OpenShift on AWS", "Jenkins", "Grafana", "Amazon S3"],
   },
   {
-    title: "[Project type — e.g. Customer-facing API]",
-    meta: "[COMPANY] · [YEAR] · [Your role]",
-    problem: "[The problem in one or two sentences.]",
-    approach: "[Your approach in one or two sentences.]",
-    result: "[Outcome — e.g. p95 latency down 40%]",
-    stack: ["[TECH]", "[TECH]", "[TECH]"],
+    title: "Event-driven data sync for a university platform",
+    meta: "Large private university · 2023 – 2024 · Backend engineer",
+    problem:
+      "New Azure-based academic systems needed student, course and other university data from the core platform, kept in sync across many Cosmos DB collections, without blowing up a pay-as-you-go database bill.",
+    approach:
+      "Built a middleware layer that consumed the core platform's topic, transformed the data and republished it to Event Hub topics, plus a reusable base subscriber so each collection only adds its own logic. Chose partition keys to keep Request Unit cost low, then load tested with JMeter and fixed the queries and partition keys it flagged.",
+    result: "One pub/sub pipeline for every collection, with clear visibility of incoming data and lower RU cost per operation",
+    stack: [".NET", "Azure Event Hub", "Azure Cosmos DB", "JMeter"],
   },
   {
-    title: "[Project type — e.g. Legacy system migration]",
-    meta: "[COMPANY] · [YEAR] · [Your role]",
-    problem: "[The problem in one or two sentences.]",
-    approach: "[Your approach in one or two sentences.]",
-    result: "[Outcome — e.g. zero-downtime cutover]",
-    stack: ["[TECH]", "[TECH]", "[TECH]"],
+    title: "Standing order and bill payment platform",
+    meta: "Global bank, Indonesian operations · Backend engineer",
+    problem: "Front-office staff needed one place to manage standing orders and automated bill payments for customers.",
+    approach:
+      "Built on a .NET microservices backend and integrated it with SYB, a well-known Indonesian biller aggregator, so payments flow straight to billers.",
+    result: "Standing orders and bill payments handled end to end through a single biller integration",
+    stack: [".NET", "Microservices", "SYB integration"],
   },
   {
-    title: "[Project type — e.g. Internal admin dashboard]",
-    meta: "[COMPANY] · [YEAR] · [Your role]",
-    problem: "[The problem in one or two sentences.]",
-    approach: "[Your approach in one or two sentences.]",
-    result: "[Outcome — e.g. support tickets halved]",
-    stack: ["[TECH]", "[TECH]", "[TECH]"],
+    title: "Official travel order system",
+    meta: "State-owned enterprise · 2025 – 2026 · Full-stack engineer (freelance)",
+    problem:
+      "Official business travel needed a single flow from the first proposal, through approvals, to booking flights with an external ticketing system.",
+    approach: "Worked across the frontend and backend: a Next.js and Ant Design web app on top of a Strapi (Node.js) backend.",
+    result: "Travel requests run from proposal to approval to ticketing in one app",
+    stack: ["Next.js", "Ant Design", "Node.js", "Strapi"],
   },
 ];
 
@@ -147,7 +153,7 @@ export const Work = () => (
     <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between xl:gap-[60px]">
       <div className="flex flex-col gap-4 xl:gap-5">
         <SectionLabel kanji="戦">Recent work</SectionLabel>
-        <h2 className={h2}>Shipped at [COMPANY].</h2>
+        <h2 className={h2}>Shipped in production.</h2>
       </div>
       <p className={`text-[15px] leading-[1.6] xl:w-[420px] xl:shrink-0 xl:leading-[1.65] ${muted}`}>
         Most of this work is under NDA, so there are no screenshots — just the problem, how I approached it, and what
