@@ -41,7 +41,7 @@ const Experience = ({ rootId }: { rootId: string }) => {
         canvas: canvas.current,
         overlay: overlay.current,
         root,
-        modelUrl: "/experimental/ronin.glb",
+        modelUrl: { high: "/experimental/ronin.glb", low: "/experimental/ronin-mobile.glb" },
         texturesBase: "/experimental",
         onProgress: (p) => setProgress(p),
         onReady: () => setReady(true),
@@ -59,6 +59,8 @@ const Experience = ({ rootId }: { rootId: string }) => {
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-[#05060a]">
         <canvas ref={canvas} className="absolute inset-0 size-full" />
         <canvas ref={overlay} className="absolute inset-0 size-full opacity-0" />
+        {/* phones skip the post pass, so the vignette is drawn here instead */}
+        <div className="absolute inset-0 md:hidden" style={{ background: "radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0,0,0,.55) 100%)" }} />
         {/* a soft scrim on the left, where the text sits */}
         <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/15 to-transparent" />
       </div>
