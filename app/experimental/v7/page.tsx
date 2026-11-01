@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import SlashText from "@/components/SlashText";
 import Film from "@/components/experimental/v7/Film";
-import { About, Approach, Contact, Toolkit, Work } from "@/components/HomeSections";
+import ApproachSlides from "@/components/experimental/v7/ApproachSlides";
+import { About, Contact, Toolkit, Work } from "@/components/HomeSections";
 
 export const metadata: Metadata = {
   title: "biairmal · experimental v7",
@@ -52,20 +53,19 @@ export default function ExperimentalV7() {
         <span className="absolute bottom-8 left-1/2 -translate-x-1/2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#8b8b8b]">Scroll to draw</span>
       </section>
 
-      {/* 02 · the circle and the cut */}
-      <div className="h-[60svh]" aria-hidden="true" />
-      <div data-shot="c02" className="flex min-h-svh items-end pb-10 md:items-center md:pb-0">
+      {/* the circle: round his left side, behind him, his right side… */}
+      <div data-shot="c01b" className="h-[120svh]" aria-hidden="true" />
+
+      {/* 02 · …to his front, where he cuts (a clear screen for the slash) */}
+      <div data-shot="c02" className="h-[90svh]" aria-hidden="true" />
+
+      {/* About: the camera holds on him while the slash fades */}
+      <div data-shot="c02h" className="flex min-h-svh items-end pb-10 md:items-center md:pb-0">
         <About years={years} />
       </div>
 
-      {/* 03 · the lantern path to the house, pinned while the camera walks it */}
-      <div className="relative h-[260svh]">
-        <div data-shot="c03a" data-at="0" className="absolute top-0 h-px w-full" />
-        <div className="sticky top-0 flex min-h-svh items-center">
-          <Approach />
-        </div>
-        <div data-shot="c03b" data-at="1" className="absolute bottom-0 h-px w-full" />
-      </div>
+      {/* 03 · low along the lantern path to the house: one stage per lantern */}
+      <ApproachSlides />
 
       {/* 04 · work: the targets in the yard · 05 · toolkit: the weapons */}
       <div data-shot="c04">

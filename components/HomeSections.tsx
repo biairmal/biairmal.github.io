@@ -43,7 +43,7 @@ const WORK = [
   },
 ];
 
-const STEPS = [
+export const STEPS = [
   { name: "Plan", body: "Requirements, architecture and risks mapped before any code. You get a written scope and a realistic timeline." },
   { name: "Build", body: "Small, reviewed, tested increments. Working software every week instead of a big reveal at the end." },
   { name: "Ship", body: "Automated pipelines, staged rollouts and a rollback plan. Release day feels like any other day." },

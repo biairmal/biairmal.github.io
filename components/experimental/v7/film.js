@@ -34,17 +34,27 @@ const TARGETS = V(-6.5, 0.41, 39);
 const ARMS = V(HOUSE.x + 2.4, 0.41, 38.6);
 const WARM = new THREE.Color(0xffc985), PAPER = new THREE.Color(0xffe2b4), MOONC = new THREE.Color(0xff5a48), SEAM = 0xffd6cc;
 
-// ------------------------------------------------------------------ shots: [pos, target, lens mm] for landscape and portrait
+// ------------------------------------------------------------------ shots
+// Path shots: [pos, target, lens mm], for landscape (d) and portrait (m).
+// Orbit shots circle him: { ang (deg, 0 = behind him, ±180 = in front; he faces −Z and his left is −X),
+// rad, y (camera height), ty (look-at height), side (m: pushes him toward screen-right, room for text), mm }.
+// The orbit runs the long way: front-left → his left → behind him → his right → his front (the slash).
+const ORBIT = {
+  c01: { d: { ang: -115, rad: 2.7, y: 1.15, ty: 1.2, side: 0.95, mm: 40 }, m: { ang: -115, rad: 3.0, y: 1.05, ty: 1.45, side: 0, mm: 30 } },
+  c01b: { d: { ang: 0, rad: 2.9, y: 1.0, ty: 1.3, side: 0.2, mm: 38 }, m: { ang: 0, rad: 3.2, y: 0.95, ty: 1.5, side: 0, mm: 28 } },
+  c02: { d: { ang: 180, rad: 3.1, y: 0.95, ty: 1.35, side: 0.8, mm: 34 }, m: { ang: 180, rad: 3.4, y: 0.9, ty: 1.55, side: 0, mm: 24 } },
+};
 const SHOT = {
-  c01: { d: [V(-1.6, 1.35, -3.0), V(2.2, 1.15, 1.1), 42], m: [V(-0.9, 1.15, -2.7), V(-0.15, 1.75, 0.2), 30] },
-  c02: { d: [V(2.6, 1.2, -3.5), V(-0.9, 1.55, 0.4), 34], m: [V(1.6, 1.05, -3.2), V(0.1, 1.5, 0.1), 24] },
-  c03a: { d: [V(0.55, 1.45, 3.4), V(0.1, 1.55, 45), 30], m: [V(0.4, 1.45, 3.4), V(0.12, 2.1, 45), 20] },
-  c03b: { d: [V(0.45, 1.6, 24.5), V(0.3, 1.6, 45), 30], m: [V(0.35, 1.65, 24.5), V(0.2, 2.2, 45), 20] },
+  // c02h: holds the c02 framing while About is read (defined below from ORBIT.c02)
+  // low over the planks, looking down the path to the house
+  c03a: { d: [V(0.45, 0.8, 3.2), V(0.1, 1.05, 45), 30], m: [V(0.35, 0.8, 3.2), V(0.12, 1.6, 45), 20] },
+  c03b: { d: [V(0.4, 0.85, 27), V(0.3, 1.15, 45), 30], m: [V(0.3, 0.85, 27), V(0.2, 1.7, 45), 20] },
   c04: { d: [V(TARGETS.x + 7.8, 1.5, TARGETS.z - 6.6), V(TARGETS.x + 4.2, 0.9, TARGETS.z + 0.4), 34], m: [V(TARGETS.x + 6.6, 1.6, TARGETS.z - 6.8), V(TARGETS.x + 2.0, 1.0, TARGETS.z + 0.2), 20] },
   c05: { d: [V(ARMS.x - 0.2, ARMS.y + 0.95, ARMS.z - 3.1), V(ARMS.x - 0.3, ARMS.y + 0.8, ARMS.z), 32], m: [V(ARMS.x + 0.15, ARMS.y + 0.62, ARMS.z - 3.5), V(ARMS.x - 0.12, ARMS.y + 1.0, ARMS.z), 20] },
   c06: { d: [V(0.75, 1.15, 6.2), V(-6.4, 7.0, -60), 55], m: [V(0.45, 1.0, 5.4), V(-4.3, 6.6, -60), 34] },
 };
-const ORDER = ["c01", "c02", "c03a", "c03b", "c04", "c05", "c06"];
+ORBIT.c02h = ORBIT.c02;
+const ORDER = ["c01", "c01b", "c02", "c02h", "c03a", "c03b", "c04", "c05", "c06"];
 
 function glowTexture(r, g, b, soft = 1) {
   const c = document.createElement("canvas");
@@ -263,7 +273,8 @@ export function startFilm({ canvas, root, base, onProgress, onReady }) {
     };
     reeds(-14, -45, 5, 260); reeds(14, -45, 5, 260); reeds(0, -45, 4, 160);
     reeds(-9, 35, 3, 220); reeds(9, 35, 3, 200);
-    reeds(-2.0, 1.5, 0.8, 60, 0.4, 1.1); reeds(2.1, -1.2, 0.7, 50, 0.4, 1.0); reeds(-1.6, -2.4, 0.6, 40, 0.3, 0.9);
+    // near him, but outside the camera's orbit (radius 2.7–3.4)
+    reeds(-5.0, 2.6, 0.7, 60, 0.4, 1.1); reeds(4.8, -2.0, 0.7, 50, 0.4, 1.0); reeds(-4.3, -3.7, 0.6, 40, 0.3, 0.9); reeds(1.4, -1.6, 0.25, 14, 0.3, 0.7);
   }
 
   // ---------------- his stone (placeholder)
@@ -393,11 +404,11 @@ export function startFilm({ canvas, root, base, onProgress, onReady }) {
     vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }",
     fragmentShader: `varying vec2 vUv; uniform float head; uniform float fade;
       void main(){ float u = vUv.x; if (u > head) discard;
-        float age = 1. - (head - u) * 2.2;                      // bright at the head, fading tail
+        float age = 1. - (head - u) * 1.35 * (1. - smoothstep(0.85, 1.05, head));   // once the cut completes, the whole crescent hangs in the air                      // bright at the head, fading tail
         float edge = smoothstep(0.2, 1.0, vUv.y), core = smoothstep(0.93, 1.0, vUv.y);
         float a = clamp(age, 0., 1.); a = a*a*a * edge * edge * (1. - fade);
         vec3 c = mix(vec3(1.0, 0.25, 0.18), vec3(1.0, 0.95, 0.9), core);
-        gl_FragColor = vec4(c * (0.4 + 2.6*core), a * 0.55); }` });
+        gl_FragColor = vec4(c * (0.5 + 2.8*core), a * 0.8); }` });
   {
     // a ribbon between two radii around his chest, from low at his left hip (−X) to high above his right shoulder (+X)
     const N = 48, r0 = 0.62, r1 = 1.05, a0 = (205 * Math.PI) / 180, a1 = (35 * Math.PI) / 180;
@@ -493,27 +504,40 @@ export function startFilm({ canvas, root, base, onProgress, onReady }) {
   };
   window.addEventListener("resize", onResize);
 
+  const variant = () => (window.innerWidth < window.innerHeight ? "m" : "d");
+  const look = (p, t) => new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(p, t, V(0, 1, 0)));
+  const orbitPose = (o) => {
+    const a = (o.ang * Math.PI) / 180;
+    const p = V(HIS.x + Math.sin(a) * o.rad, o.y, HIS.z + Math.cos(a) * o.rad);
+    const chest = V(HIS.x, o.ty, HIS.z);
+    // aim a little to his side so he sits right of centre: screen-left of him is "right × −side"
+    const right = chest.clone().sub(p).cross(V(0, 1, 0)).normalize();
+    return { p, q: look(p, chest.clone().addScaledVector(right, -o.side)), mm: o.mm };
+  };
   const pose = (name) => {
-    const [p, t, mm] = SHOT[name][window.innerWidth < window.innerHeight ? "m" : "d"];
-    const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(p, t, V(0, 1, 0)));
-    return { p, q, mm };
+    if (ORBIT[name]) return orbitPose(ORBIT[name][variant()]);
+    const [p, t, mm] = SHOT[name][variant()];
+    return { p, q: look(p, t), mm };
   };
   const tmpQ = new THREE.Quaternion();
   const camAt = (s) => {
     const i0 = Math.floor(clamp(s, 0, ORDER.length - 1)), i1 = Math.min(i0 + 1, ORDER.length - 1), u = s - i0;
-    const A = pose(ORDER[i0]), B = pose(ORDER[i1]);
-    let p;
-    if (ORDER[i0] === "c01") {
-      // the circle: orbit him instead of cutting across
-      const ra = V(A.p.x - HIS.x, 0, A.p.z - HIS.z), rb = V(B.p.x - HIS.x, 0, B.p.z - HIS.z);
-      const angA = Math.atan2(ra.x, ra.z), angB = Math.atan2(rb.x, rb.z);
-      let d = angB - angA; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
-      const ang = angA + d * u, rad = lerp(ra.length(), rb.length(), u);
-      p = V(HIS.x + Math.sin(ang) * rad, lerp(A.p.y, B.p.y, u), HIS.z + Math.cos(ang) * rad);
+    const n0 = ORDER[i0], n1 = ORDER[i1];
+    if (ORBIT[n0] && ORBIT[n1]) {
+      // the circle: interpolate around him (angles are not wrapped, so it goes the long way)
+      const a = ORBIT[n0][variant()], b = ORBIT[n1][variant()], o = {};
+      for (const k of Object.keys(a)) o[k] = lerp(a[k], b[k], u);
+      return orbitPose(o);
+    }
+    const A = pose(n0), B = pose(n1);
+    const p = A.p.clone().lerp(B.p, u);
+    if (n0 === "c02h") {
+      // from his front onto the path behind him: pass beside him (his right), staying low
+      p.x += Math.sin(u * Math.PI) * 1.9;
+      p.y -= Math.sin(u * Math.PI) * 0.15;
     } else {
-      p = A.p.clone().lerp(B.p, u);
       const dist = A.p.distanceTo(B.p);
-      if (dist > 8) p.y += Math.sin(u * Math.PI) * Math.min(7, dist * 0.15); // long flights arc up
+      if (dist > 8 && n0 !== "c03a") p.y += Math.sin(u * Math.PI) * Math.min(7, dist * 0.15); // long flights arc up
     }
     return { p, q: tmpQ.copy(A.q).slerp(B.q, u).clone(), mm: lerp(A.mm, B.mm, u) };
   };
@@ -552,8 +576,9 @@ export function startFilm({ canvas, root, base, onProgress, onReady }) {
     camera.fov = mmToFov(cur.mm); camera.updateProjectionMatrix();
 
     // the slash sweeps as the camera circles (c01 → c02), then fades as we leave him
-    slashMat.uniforms.head.value = smooth(ramp(s, 0.45, 0.8)) * 1.05;
-    slashMat.uniforms.fade.value = smooth(ramp(s, 1.15, 1.6));
+    // the slash: as the camera comes round to his front (c01b → c02), then it fades as we leave him
+    slashMat.uniforms.head.value = smooth(ramp(s, 1.7, 1.97)) * 1.05;
+    slashMat.uniforms.fade.value = smooth(ramp(s, 2.45, 3.0));
     key.target.position.copy(HIS);
 
     waterU.time.value = time; dustMat.uniforms.time.value = time;
