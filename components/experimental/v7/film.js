@@ -49,7 +49,7 @@ const SHOT = {
   // low over the planks, looking down the path to the house
   c03a: { d: [V(0.45, 0.8, 3.2), V(0.1, 1.05, 45), 30], m: [V(0.35, 0.8, 3.2), V(0.12, 1.6, 45), 20] },
   c03b: { d: [V(0.4, 0.85, 27), V(0.3, 1.15, 45), 30], m: [V(0.3, 0.85, 27), V(0.2, 1.7, 45), 20] },
-  c04: { d: [V(TARGETS.x + 7.8, 1.5, TARGETS.z - 6.6), V(TARGETS.x + 4.2, 0.9, TARGETS.z + 0.4), 34], m: [V(TARGETS.x + 6.6, 1.6, TARGETS.z - 6.8), V(TARGETS.x + 2.0, 1.0, TARGETS.z + 0.2), 20] },
+  c04: { d: [V(TARGETS.x + 6.6, 1.2, TARGETS.z - 3.4), V(TARGETS.x + 5.7, 0.8, TARGETS.z + 2.1), 32], m: [V(TARGETS.x + 5.6, 1.25, TARGETS.z - 3.6), V(TARGETS.x + 4.1, 0.95, TARGETS.z + 0.7), 22] },
   c05: { d: [V(ARMS.x - 0.2, ARMS.y + 0.95, ARMS.z - 3.1), V(ARMS.x - 0.3, ARMS.y + 0.8, ARMS.z), 32], m: [V(ARMS.x + 0.15, ARMS.y + 0.62, ARMS.z - 3.5), V(ARMS.x - 0.12, ARMS.y + 1.0, ARMS.z), 20] },
   c06: { d: [V(0.75, 1.15, 6.2), V(-6.4, 7.0, -60), 55], m: [V(0.45, 1.0, 5.4), V(-4.3, 6.6, -60), 34] },
 };
@@ -283,44 +283,22 @@ export function startFilm({ canvas, root, base, onProgress, onReady }) {
     const ring = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.065, 96), new THREE.MeshBasicMaterial({ color: SEAM, transparent: true, opacity: 0.22, toneMapped: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.012, 0); scene.add(ring);
   }
 
-  // ---------------- the lantern path (walkway placeholder)
-  {
-    const n = Math.round((PATH.z1 - PATH.z0) / 0.34);
-    const planks = new THREE.InstancedMesh(new THREE.BoxGeometry(1.5, 0.07, 0.3), M.plank, n); const m4 = new THREE.Matrix4();
-    for (let i = 0; i < n; i++) { m4.makeRotationY((rand() - 0.5) * 0.02).setPosition((rand() - 0.5) * 0.03, PATH.y, PATH.z0 + 0.4 + i * 0.34); planks.setMatrixAt(i, m4); }
-    scene.add(planks);
-    const posts = new THREE.InstancedMesh(new THREE.BoxGeometry(0.1, 0.75, 0.1), M.timberDark, 30); let k = 0;
-    for (let z = PATH.z0 + 0.5; z < PATH.z1 && k < 30; z += 2.6) for (const x of [-0.75, 0.75]) { m4.makeTranslation(x, -0.05, z); posts.setMatrixAt(k++, m4); }
-    posts.count = k; scene.add(posts);
-    box(0.012, 0.004, PATH.z1 - PATH.z0, M.seam, 0, PATH.y + 0.04, (PATH.z0 + PATH.z1) / 2);
-  }
+  // ---------------- the lantern path: generated walkway segments (placed once loaded) and its light seam
+  const DECK = PATH.y + 0.04;
+  box(0.012, 0.004, PATH.z1 - PATH.z0, M.seam, 0, DECK + 0.012, (PATH.z0 + PATH.z1) / 2);
   for (const [x, z] of LANTERNS) {
-    box(1.0, 0.5, 1.0, M.stone, x * 1.05, 0, z);
     glow(x * 1.05, 1.62, z, 2.4, 0.6);
     pool(x * 0.55, PATH.y + 0.05, z, 2.1, 0.32);
     pool(x * 1.3, 0.02, z, 3.2, 0.2);
     point(WARM, 4, 8, x * 1.05, 1.7, z);
   }
 
-  // ---------------- WORK: the straw targets in the yard and the fire basket (placeholders)
+  // ---------------- WORK: the cut targets in the yard and the fire basket (generated models, placed once loaded)
+  const BRAZIER = V(TARGETS.x + 3.3, TARGETS.y, TARGETS.z + 1.9);
   {
-    const strawTex = canvasTex(64, 256, (x) => { x.fillStyle = "#7a6a48"; x.fillRect(0, 0, 64, 256); for (let j = 0; j < 256; j += 2) { x.fillStyle = `rgba(40,30,15,${0.2 + Math.random() * 0.3})`; x.fillRect(0, j, 64, 1); } }, true);
-    const straw = Std({ map: strawTex, roughness: 0.95 });
-    const cutFace = Std({ color: 0xb8a070, roughness: 0.8, emissive: 0x2a1408, side: THREE.DoubleSide });
-    for (let i = 0; i < 4; i++) {
-      const g = new THREE.Group(); g.position.set(TARGETS.x + i * 1.35, TARGETS.y, TARGETS.z - (i % 2) * 0.5); scene.add(g);
-      box(0.5, 0.08, 0.5, M.timberDark, 0, 0.04, 0, g); box(0.05, 0.85, 0.05, M.timberDark, 0, 0.45, 0, g);
-      const r = 0.11, hLow = 0.95 + (i % 2) * 0.1, tilt = 0.55 + i * 0.08;
-      const low = new THREE.Mesh(new THREE.CylinderGeometry(r, r, hLow, 20), straw); low.position.y = 0.3 + hLow / 2; g.add(low);
-      const face = new THREE.Mesh(new THREE.CircleGeometry(r, 24), cutFace); face.scale.set(1, 1 / Math.cos(tilt), 1); face.rotation.set(-Math.PI / 2 + tilt, 0, 0); face.position.y = 0.3 + hLow; g.add(face);
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.004, 4, 32), M.seam); ring.scale.copy(face.scale); ring.rotation.copy(face.rotation); ring.position.copy(face.position); g.add(ring);
-      const top = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.55, 20), straw); top.rotation.set(Math.PI / 2, 0, 0.5 + i * 0.7); top.position.set(0.35 * Math.cos(i * 1.7), r, 0.35 + 0.15 * Math.sin(i)); g.add(top);
-    }
-    const bx = TARGETS.x + 2.3, bz = TARGETS.z + 1.6, by = TARGETS.y;
-    for (let k = 0; k < 3; k++) { const a = (k / 3) * Math.PI * 2; const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.25, 6), M.iron); leg.position.set(bx + Math.cos(a) * 0.18, by + 0.6, bz + Math.sin(a) * 0.18); leg.rotation.set(Math.sin(a) * 0.25, 0, -Math.cos(a) * 0.25); scene.add(leg); }
-    const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.18, 0.3, 10, 1, true), M.iron.clone()); basket.material.side = THREE.DoubleSide; basket.position.set(bx, by + 1.3, bz); scene.add(basket);
-    const fire = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 8), new THREE.MeshBasicMaterial({ color: 0xffb060, toneMapped: false })); fire.position.set(bx, by + 1.55, bz); scene.add(fire);
-    glow(bx, by + 1.55, bz, 3.2, 0.8); pool(bx - 1.2, by + 0.02, bz - 1.2, 3.6, 0.4); pool(TARGETS.x + 2, TARGETS.y + 0.02, TARGETS.z, 3.2, 0.18);
+    const bx = BRAZIER.x, bz = BRAZIER.z, by = BRAZIER.y;
+    const fire = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.4, 8), new THREE.MeshBasicMaterial({ color: 0xffb060, toneMapped: false })); fire.position.set(bx, by + 1.5, bz); scene.add(fire);
+    glow(bx, by + 1.55, bz, 3.2, 0.8); pool(bx - 1.2, by + 0.02, bz - 1.2, 3.6, 0.4); pool(TARGETS.x + 4.2, TARGETS.y + 0.02, TARGETS.z + 0.9, 3.2, 0.22);
     point(0xff9a50, 14, 9, bx, by + 1.7, bz);
   }
 
@@ -432,13 +410,31 @@ export function startFilm({ canvas, root, base, onProgress, onReady }) {
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
   const suffix = hi ? "" : "-mobile";
-  const files = { ronin: `${base}/ronin${suffix}.glb`, lantern: `${base}/lantern${suffix}.glb`, house: `${base}/house${suffix}.glb` };
+  const NAMES = ["ronin", "lantern", "house", "walkway", "lantern_base", "brazier", "targets"];
+  const files = Object.fromEntries(NAMES.map((n) => [n, `${base}/${n}${n === "lantern_base" ? "" : suffix}.glb`]));
   const progress = {};
-  const report = () => onProgress?.(0.95 * (Object.values(progress).reduce((a, b) => a + b, 0) / 3));
+  const report = () => onProgress?.(0.95 * (Object.values(progress).reduce((a, b) => a + b, 0) / NAMES.length));
   const load = (name) => new Promise((res) => loader.load(files[name], res, (e) => { if (e.total) { progress[name] = e.loaded / e.total; report(); } }, () => res(null)));
   let ready = false;
   const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.05, 3000);
-  Promise.all([load("ronin"), load("lantern"), load("house")]).then(([ronin, lantern, house]) => {
+  Promise.all(NAMES.map(load)).then(([ronin, lantern, house, walkway, lanternBase, brazier, targets]) => {
+    const topOf = (o) => new THREE.Box3().setFromObject(o).max.y;
+    if (walkway) {
+      // 5.2 m segments laid end to end along the path, deck top at DECK (the posts go down into the water)
+      const seg = walkway.scene; seg.rotation.y = Math.PI / 2; seg.updateMatrixWorld(true);
+      const lift = DECK - topOf(seg), len = 5.2, n = Math.ceil((PATH.z1 - PATH.z0) / len);
+      for (let i = 0; i < n; i++) { const w = i ? seg.clone() : seg; w.position.set(0, lift, PATH.z0 + len / 2 + i * len); scene.add(w); }
+    }
+    if (lanternBase) {
+      // untextured model: the scene's stone material
+      lanternBase.scene.traverse((o) => { if (o.isMesh) o.material = M.stone; });
+      for (const [x, z] of LANTERNS) { const b = lanternBase.scene.clone(); b.position.set(x * 1.05, -0.3, z); b.rotation.y = x > 0 ? 0.3 : -0.4; scene.add(b); }
+    }
+    if (brazier) { brazier.scene.position.copy(BRAZIER); scene.add(brazier.scene); }
+    if (targets) {
+      // the cut set, turned toward the Work camera
+      targets.scene.position.set(TARGETS.x + 4.4, TARGETS.y, TARGETS.z + 0.9); targets.scene.rotation.y = 2.6; scene.add(targets.scene);
+    }
     if (ronin) {
       const r = ronin.scene; r.position.copy(HIS); r.rotation.y = Math.PI; // faces the moon
       r.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; if (o.material) o.material.envMapIntensity = 0.6; } });
@@ -446,8 +442,8 @@ export function startFilm({ canvas, root, base, onProgress, onReady }) {
     }
     if (lantern) {
       for (const [x, z] of LANTERNS) {
-        const l = lantern.scene.clone(); l.position.set(x * 1.05, 0.25, z); l.scale.setScalar(0.92); scene.add(l);
-        const core = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.22), M.flame); core.position.set(x * 1.05, 0.25 + 1.4 * 0.92, z); scene.add(core);
+        const l = lantern.scene.clone(); l.position.set(x * 1.05, 0.3, z); l.scale.setScalar(0.92); scene.add(l);
+        const core = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.22), M.flame); core.position.set(x * 1.05, 0.3 + 1.4 * 0.92, z); scene.add(core);
       }
     }
     if (house) {
