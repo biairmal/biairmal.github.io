@@ -40,8 +40,13 @@ export const SHOTS: Shot[] = [
 const IDX = Object.fromEntries(SHOTS.map((s, i) => [s.id, i]));
 
 // ------------------------------------------------------------------ character materials (by glTF material name)
-function characterMaterials() {
-  const P = (o: THREE.MeshPhysicalMaterialParameters) => new THREE.MeshPhysicalMaterial(o);
+function characterMaterials(hi: boolean) {
+  // phones get MeshStandardMaterial: no clearcoat or sheen lobes, a much cheaper shader
+  const P = (o: THREE.MeshPhysicalMaterialParameters) => {
+    if (hi) return new THREE.MeshPhysicalMaterial(o);
+    const { color, roughness, metalness, envMapIntensity } = o;
+    return new THREE.MeshStandardMaterial({ color, roughness: typeof roughness === "number" && o.clearcoat ? Math.min(roughness, 0.3) : roughness, metalness, envMapIntensity });
+  };
   const S = (o: THREE.MeshStandardMaterialParameters) => new THREE.MeshStandardMaterial(o);
   const seam = new THREE.MeshBasicMaterial({ color: 0xeaf2ff, toneMapped: false });
   const M: Record<string, THREE.Material> = {
@@ -175,7 +180,7 @@ export type ExperienceOptions = {
   canvas: HTMLCanvasElement;
   overlay: HTMLCanvasElement;
   root: HTMLElement;
-  modelUrl: string;
+  modelUrl: { high: string; low: string };
   texturesBase: string;
   onProgress?: (p: number) => void;
   onReady?: () => void;
@@ -185,7 +190,11 @@ export function startExperience(o: ExperienceOptions) {
   const mobile = window.matchMedia("(max-width: 767px)").matches || navigator.maxTouchPoints > 1;
   const quality: "high" | "low" = mobile ? "low" : "high";
   const renderer = new THREE.WebGLRenderer({ canvas: o.canvas, antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality === "high" ? 1.5 : 1.25));
+  // resolution adapts to the frame rate (see adapt() below); phones start lower
+  const PR_MAX = Math.min(window.devicePixelRatio, quality === "high" ? 1.5 : 1.5);
+  const PR_MIN = quality === "high" ? 0.75 : 0.6;
+  let pixelRatio = Math.min(PR_MAX, quality === "high" ? 1.5 : 1.0);
+  renderer.setPixelRatio(pixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -200,6 +209,7 @@ export function startExperience(o: ExperienceOptions) {
   const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.05, 2000);
 
   // ---------------- post
+  const usePost = quality === "high";
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   const bokeh = quality === "high" ? new BokehPass(scene, camera, { focus: 8, aperture: 0.0003, maxblur: 0.0035 }) : null;
@@ -250,12 +260,12 @@ export function startExperience(o: ExperienceOptions) {
   let mixer: THREE.AnimationMixer | null = null;
   const actions: Record<string, THREE.AnimationAction> = {};
   let springs: ReturnType<typeof springBones> | null = null;
-  const { M: charMats, seam: charSeam } = characterMaterials();
+  const { M: charMats, seam: charSeam } = characterMaterials(quality === "high");
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
   let ready = false;
   loader.load(
-    o.modelUrl,
+    o.modelUrl[quality],
     (g) => {
       g.scene.traverse((obj) => {
         const m = obj as THREE.Mesh;
@@ -275,9 +285,16 @@ export function startExperience(o: ExperienceOptions) {
         actions[c.name] = a;
       }
       springs = springBones(g.scene);
-      ready = true;
-      o.onProgress?.(1);
-      o.onReady?.();
+      // compile every shader now, behind the loader, so nothing stalls mid-scroll
+      const hidden: THREE.Object3D[] = [];
+      scene.traverse((obj) => { if (!obj.visible) { hidden.push(obj); obj.visible = true; } });
+      const finish = () => {
+        for (const h of hidden) h.visible = false;
+        ready = true;
+        o.onProgress?.(1);
+        o.onReady?.();
+      };
+      renderer.compileAsync(scene, camera).then(() => renderer.compileAsync(dustScene, camera)).then(finish, finish);
     },
     (e) => { if (e.total) o.onProgress?.(0.95 * (e.loaded / e.total)); },
     () => { o.onProgress?.(1); o.onReady?.(); }
@@ -348,9 +365,29 @@ export function startExperience(o: ExperienceOptions) {
   // the page is sliced along the blade at the moment of the cut
   const sliceAmount = (s: number, iaiT: number) => (s < 3 ? smooth(ramp(iaiT, 1.12, 1.24)) * (1 - smooth(ramp(iaiT, 1.42, 1.72))) : 0);
 
+  // ---------------- adaptive resolution: hold ~55+ fps by trading pixels
+  let acc = 0, frames = 0, lastAdapt = 0;
+  const adapt = (dt: number) => {
+    acc += dt; frames++;
+    if (acc < 1.2) return;
+    const avg = acc / frames; acc = 0; frames = 0;
+    const now = performance.now();
+    if (now - lastAdapt < 1500) return;
+    let next = pixelRatio;
+    if (avg > 1 / 45) next = Math.max(PR_MIN, pixelRatio * 0.85);
+    else if (avg < 1 / 58) next = Math.min(PR_MAX, pixelRatio * 1.08);
+    if (Math.abs(next - pixelRatio) > 0.02) {
+      pixelRatio = next; lastAdapt = now;
+      renderer.setPixelRatio(pixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight, false);
+      if (usePost) { composer.setPixelRatio(pixelRatio); composer.setSize(window.innerWidth, window.innerHeight); }
+    }
+  };
+
   // ---------------- frame
   const SNAP = new URLSearchParams(window.location.search).has("snap"); // testing: no camera smoothing
   const NOCHAR = new URLSearchParams(window.location.search).has("nochar");
+  if (SNAP) (window as unknown as { __info: unknown }).__info = renderer.info;   // testing: draw-call and triangle counts
   let time = 0, idleT = 0, last = performance.now(), camSmoothed: Shot | null = null;
   const ctx = o.overlay.getContext("2d")!;
   const cur = { pos: V(), tgt: V(), mm: 35, roll: 0, phase: 8, blood: 0, eclipse: 0 };
@@ -411,7 +448,9 @@ export function startExperience(o: ExperienceOptions) {
       for (const [name, a] of Object.entries(actions)) {
         const dur = a.getClip().duration;
         a.time = name === "idle" ? idleT % dur : clamp(c.t[name] ?? 0, 0, dur - 1e-3);
-        a.setEffectiveWeight((c.w[name] ?? 0) / total);
+        const wgt = (c.w[name] ?? 0) / total;
+        a.enabled = wgt > 0.001;
+        a.setEffectiveWeight(wgt);
       }
       mixer.update(0);
       springs?.update(dt);
@@ -421,8 +460,13 @@ export function startExperience(o: ExperienceOptions) {
     const sets = world.sets;
     sets.slab.visible = s < 4.6 || s > 8.4;
     sets.path.visible = s > 2.9 && s < 7.3;
-    sets.rack.visible = sets.rackSpot.visible = s > 5.6 && s < 8.3;
+    sets.rack.visible = s > 5.6 && s < 8.3;
     sets.tsubaRing.visible = s > 6.6 && s < 8.7;
+    world.mists.slab.visible = sets.slab.visible;
+    world.mists.path.visible = sets.path.visible;
+    world.mists.rack.visible = sets.rack.visible;
+    world.mists.tsuba.visible = sets.tsubaRing.visible;
+    sets.rackSpot.intensity = sets.rack.visible ? 2.2 : 0;
     world.moon.visible = !(s > 6.55 && s < 7.45);   // the rack shot is close and low; the moon's reflection would glare behind it
     // lanterns light as the walk passes them
     const walkU = ramp(s, 5, 6.6);
@@ -465,7 +509,14 @@ export function startExperience(o: ExperienceOptions) {
       world.water.visible = true;
     } else rays.uniforms.k.value = 0;
 
-    composer.render(dt);
+    if (usePost) composer.render(dt);
+    else {
+      renderer.render(scene, camera);
+      renderer.autoClear = false;
+      renderer.render(dustScene, camera);
+      renderer.autoClear = true;
+    }
+    adapt(dt);
 
     // slice overlay
     const sl = sliceAmount(s, iaiT);

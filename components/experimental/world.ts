@@ -74,9 +74,9 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
   // ---------------- moon: a lit sphere, so its phases are real
   const moonMat = new THREE.ShaderMaterial({
     fog: false,
-    uniforms: { L: { value: V(0, 0, 1) }, col: { value: new THREE.Color(NIGHT.moon) }, glow: { value: 0 } },
+    uniforms: { L: { value: V(0, 0, 1) }, col: { value: new THREE.Color(NIGHT.moon) }, glow: { value: 0 }, soft: { value: opts.quality === "high" ? 0 : 1 } },
     vertexShader: "varying vec3 n; varying vec3 p; void main(){ n = normalize(mat3(modelMatrix)*normal); p = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }",
-    fragmentShader: `varying vec3 n; varying vec3 p; uniform vec3 L; uniform vec3 col; uniform float glow;
+    fragmentShader: `varying vec3 n; varying vec3 p; uniform vec3 L; uniform vec3 col; uniform float glow; uniform float soft;
       float hash(vec3 q){ return fract(sin(dot(q, vec3(127.1,311.7,74.7)))*43758.5453); }
       float noise(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.-2.*f);
         return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
@@ -88,7 +88,7 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
         float maria = smoothstep(.4,.8, fbm(q*0.9+3.));
         float crater = smoothstep(.66,.74, noise(q*22.)) * .12;
         float d = smoothstep(-0.05, 0.22, dot(n, normalize(L)));
-        vec3 c = col * (0.82 + 0.18*m - crater) * (1. - .26*maria);
+        vec3 c = col * (0.82 + 0.18*m - crater*(1.-soft*.7)) * (1. - mix(.26, .1, soft)*maria);
         gl_FragColor = vec4(c*(d*0.9 + 0.03) + col*glow*0.3, 1.);
       }`,
   });
@@ -171,7 +171,6 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
       void main(){ vUv = textureMatrix * vec4(position, 1.); vW = (modelMatrix*vec4(position,1.)).xyz; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
     fragmentShader: `uniform vec3 color; uniform sampler2D tDiffuse; uniform sampler2D n1; uniform sampler2D n2; uniform float time; uniform vec3 deep; uniform vec3 fogC; uniform vec2 ripple;
       varying vec4 vUv; varying vec3 vW;
-      #include <tonemapping_pars_fragment>
       void main(){
         vec2 p = vW.xz;
         vec3 a = texture2D(n1, p*0.045 + vec2(time*0.01, time*0.006)).rgb*2.-1.;
@@ -195,7 +194,7 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
         #include <colorspace_fragment>
       }`,
   };
-  const reflScale = opts.quality === "high" ? 0.6 : 0.35;
+  const reflScale = opts.quality === "high" ? 0.6 : 0.25;
   const water = new Reflector(new THREE.PlaneGeometry(1500, 1500), {
     textureWidth: Math.round(window.innerWidth * reflScale),
     textureHeight: Math.round(window.innerHeight * reflScale),
@@ -205,6 +204,12 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
   });
   water.rotation.x = -Math.PI / 2;
   scene.add(water);
+  if (opts.quality === "low") {
+    // phones: refresh the reflection on every other frame; the water moves slowly enough to hide it
+    const reflect = water.onBeforeRender.bind(water);
+    let n = 0;
+    water.onBeforeRender = (...args: Parameters<typeof reflect>) => { if (n++ % 2 === 0) reflect(...args); };
+  }
   const waterU = (water.material as THREE.ShaderMaterial).uniforms;
 
   // ---------------- materials for the sets
@@ -233,8 +238,9 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
   stoneDark.roughnessMap = null;
   stoneDark.roughness = 0.97;
   const wood = new THREE.MeshStandardMaterial({ map: woodTex, color: 0x6a6a6a, roughness: 0.75, bumpMap: woodTex, bumpScale: 2, envMapIntensity: 0.4 });
-  const lacquer = new THREE.MeshPhysicalMaterial({ color: 0x141416, roughness: 0.4, clearcoat: 1, clearcoatRoughness: 0.28, envMapIntensity: 0.55 });
-  const steel = new THREE.MeshPhysicalMaterial({ color: 0xe6e8ec, roughness: 0.12, metalness: 1, envMapIntensity: 2.0 });
+  const hi = opts.quality === "high";
+  const lacquer = hi ? new THREE.MeshPhysicalMaterial({ color: 0x141416, roughness: 0.4, clearcoat: 1, clearcoatRoughness: 0.28, envMapIntensity: 0.55 }) : new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.3, envMapIntensity: 0.7 });
+  const steel = hi ? new THREE.MeshPhysicalMaterial({ color: 0xe6e8ec, roughness: 0.12, metalness: 1, envMapIntensity: 2.0 }) : new THREE.MeshStandardMaterial({ color: 0xe6e8ec, roughness: 0.12, metalness: 1, envMapIntensity: 2.0 });
   const iron = new THREE.MeshStandardMaterial({ color: 0x2a2a2d, roughness: 0.45, metalness: 0.85, envMapIntensity: 1.1 });
 
   // ---------------- set: the stone slab the story starts and ends on
@@ -309,9 +315,10 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
         win.rotation.y = r;
         L.add(win);
       }
+      // kept at scene level so hiding the walkway never changes the light count (that would recompile every shader)
       const light = new THREE.PointLight(0xffd9a8, 0, 10, 1.6);
-      light.position.y = 1.47;
-      L.add(light);
+      light.position.set(x, 0.36 + 1.47, z);
+      if (opts.quality === "high") scene.add(light);
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowMap, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0 }));
       glow.position.y = 1.47;
       glow.scale.setScalar(2.4);
@@ -325,6 +332,7 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
   const setLantern = (i: number, k: number) => {
     const l = lanternLights[i];
     l.light.intensity = 6 * k;
+    l.light.visible = true;
     l.win.color.setRGB(0.06 + 0.94 * k, 0.06 + 0.84 * k, 0.06 + 0.7 * k);
     (l.glow.material as THREE.SpriteMaterial).opacity = 0.6 * k;
   };
@@ -384,7 +392,7 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
   const rackSpot = new THREE.SpotLight(0xdfe6ff, 2.2, 8, 0.28, 0.95, 1.5);
   rackSpot.position.copy(V(0.3, 3.0, -1.6).applyMatrix4(new THREE.Matrix4().compose(RACK.pos, new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), RACK.rotY), V(1, 1, 1))));
   rackSpot.target.position.copy(RACK.pos).add(V(0, 1.25, 0));
-  scene.add(rackSpot, rackSpot.target);
+  if (opts.quality === "high") scene.add(rackSpot, rackSpot.target);
 
   // ---------------- set: the tsuba ring, one guard per tool group
   const tsubaRing = new THREE.Group();
@@ -419,31 +427,57 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
     tsubaRing.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), steel));
     tsubaRing.position.copy(TSUBA_POS);
     tsubaRing.rotation.set(0.25, 0, 0.08);
-    for (const [p, c, i] of [[V(26, 11, -60), 0xdfe6ff, 40], [V(34, 4, -67), 0x9fb0d0, 25], [V(30, 7, -60.5), 0xffffff, 6]] as [THREE.Vector3, number, number][]) {
-      const l = new THREE.PointLight(c, i, 14, 1.4);
-      l.position.copy(p);
-      scene.add(l);
-    }
+    if (opts.quality === "high")
+      for (const [p, c, i] of [[V(26, 11, -60), 0xdfe6ff, 40], [V(34, 4, -67), 0x9fb0d0, 25], [V(30, 7, -60.5), 0xffffff, 6]] as [THREE.Vector3, number, number][]) {
+        const l = new THREE.PointLight(c, i, 14, 1.4);
+        l.position.copy(p);
+        scene.add(l);
+      }
+    else ironB.emissive = new THREE.Color(0x15171c);   // phones: no point lights here, a little self-light instead
   }
   scene.add(tsubaRing);
 
-  // ---------------- mist: layers of noise lying on the water around each set
+  // ---------------- mist: layers lying on the water around each set. The noise is baked once into a
+  // tileable texture (two cheap lookups per pixel instead of five octaves of procedural noise).
+  const mistNoise = (() => {
+    const N = 256, cells = 8;
+    const vnoise = (x: number, y: number, period: number) => {
+      const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+      const sx = xf * xf * (3 - 2 * xf), sy = yf * yf * (3 - 2 * yf);
+      const r = (a: number, b: number) => { const v = Math.sin((((a % period) + period) % period) * 127.1 + (((b % period) + period) % period) * 311.7 + period) * 43758.5453; return v - Math.floor(v); };
+      const a = r(xi, yi), b = r(xi + 1, yi), c = r(xi, yi + 1), d = r(xi + 1, yi + 1);
+      return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+    };
+    const data = new Uint8Array(N * N * 4);
+    for (let j = 0; j < N; j++)
+      for (let i = 0; i < N; i++) {
+        let v = 0, k = 0.5, f = 1;
+        for (let o = 0; o < 5; o++) { v += k * vnoise((i / N) * cells * f, (j / N) * cells * f, cells * f); k *= 0.5; f *= 2; }
+        const q = (j * N + i) * 4;
+        data[q] = data[q + 1] = data[q + 2] = Math.round(v * 255); data[q + 3] = 255;
+      }
+    const t = new THREE.DataTexture(data, N, N);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true;
+    t.needsUpdate = true;
+    return t;
+  })();
   const mistMats: THREE.ShaderMaterial[] = [];
   const mist = (center: THREE.Vector3, size: number, n: number, top: number, density: number) => {
+    const g = new THREE.Group();
     for (let i = 0; i < n; i++) {
-      const y = 0.04 + (i / (n - 1)) ** 1.6 * top;
+      const y = 0.04 + (n > 1 ? (i / (n - 1)) ** 1.6 : 0.3) * top;
       const m = new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
         fog: false,
-        uniforms: { col: { value: new THREE.Color(NIGHT.mist) }, seed: { value: i * 1.37 + 0.5 }, a: { value: 0.085 * density * (1 - y / (top * 1.15)) }, cen: { value: center.clone() }, R: { value: size / 2 }, time: { value: 0 } },
+        uniforms: { col: { value: new THREE.Color(NIGHT.mist) }, noise: { value: mistNoise }, seed: { value: i * 0.137 + 0.05 }, a: { value: (0.085 * density * (1 - y / (top * 1.15)) * 10) / Math.max(n, 3) * (n < 6 ? 0.75 : 1) }, cen: { value: center.clone() }, R: { value: size / 2 }, time: { value: 0 } },
         vertexShader: "varying vec3 w; void main(){ w = (modelMatrix*vec4(position,1.)).xyz; gl_Position = projectionMatrix*viewMatrix*vec4(w,1.); }",
-        fragmentShader: `varying vec3 w; uniform vec3 col; uniform float seed; uniform float a; uniform vec3 cen; uniform float R; uniform float time;
-          float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))+seed)*43758.5453); }
-          float n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y); }
-          float fbm(vec2 p){ float s=0., k=.5; for(int i=0;i<5;i++){ s+=k*n(p); p*=2.03; k*=.5; } return s; }
+        fragmentShader: `varying vec3 w; uniform sampler2D noise; uniform vec3 col; uniform float seed; uniform float a; uniform vec3 cen; uniform float R; uniform float time;
           void main(){
-            float d = fbm(w.xz*0.22 + seed + vec2(time*0.04, time*0.015)); d = smoothstep(0.38, 0.85, d);
+            vec2 uv = w.xz * 0.0275 + vec2(seed, seed * 1.7);
+            float d = texture2D(noise, uv + vec2(time*0.005, time*0.002)).r * 0.65 + texture2D(noise, uv * 2.3 - vec2(time*0.004, 0.)).r * 0.35;
+            d = smoothstep(0.42, 0.78, d);
             float edge = 1. - smoothstep(R*0.55, R, length(w.xz - cen.xz));
             float cam = smoothstep(0.8, 4.0, length(cameraPosition - w));
             gl_FragColor = vec4(col, d*a*edge*cam);
@@ -454,14 +488,18 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
       p.rotation.x = -Math.PI / 2;
       p.position.set(center.x, y, center.z);
       p.renderOrder = 2;
-      scene.add(p);
+      g.add(p);
     }
+    scene.add(g);
+    return g;
   };
-  const layers = opts.quality === "high" ? 10 : 6;
-  mist(V(2, 0, -2), 70, layers, 1.5, 1.15);
-  mist(V(-4, 0, -40), 60, layers, 1.5, 1.25);
-  mist(V(14, 0, -40), 30, Math.ceil(layers / 2), 1.2, 0.6);
-  mist(V(30, 0, -62), 40, Math.ceil(layers / 2), 1.5, 0.8);
+  const layers = opts.quality === "high" ? 8 : 3;
+  const mists = {
+    slab: mist(V(2, 0, -2), 70, layers, 1.5, 1.15),
+    path: mist(V(-4, 0, -40), 60, layers, 1.5, 1.25),
+    rack: mist(V(14, 0, -40), 30, Math.max(2, Math.ceil(layers / 2)), 1.2, 0.6),
+    tsuba: mist(V(30, 0, -62), 40, Math.max(2, Math.ceil(layers / 2)), 1.5, 0.8),
+  };
 
   // ---------------- dust: motes around the camera, bright when backlit by the moon
   const dustMat = new THREE.ShaderMaterial({
@@ -485,7 +523,7 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
   });
   const dust = new THREE.Group();
   {
-    const count = opts.quality === "high" ? 2600 : 1200;
+    const count = opts.quality === "high" ? 2600 : 700;
     const pos = new Float32Array(count * 3), sz = new Float32Array(count);
     let seed = 3;
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -526,7 +564,7 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
     const hm = halo.material as THREE.SpriteMaterial;
     hm.color.setRGB(1, 1 - 0.7 * b, 1 - 0.75 * b);
     halo.visible = moon.visible;
-    hm.opacity = (0.35 + 0.25 * b) * (1 - o.eclipse);
+    hm.opacity = (0.35 + 0.25 * b) * (1 - o.eclipse) * (opts.quality === "high" ? 1 : 1.9);
     // moon phase: the light orbits the sphere, relative to where the camera looks from
     const toCam = o.camera.position.clone().sub(MOON_POS).normalize();
     const ref = V(-1, 0.25, 0);
@@ -546,5 +584,5 @@ export function buildWorld(renderer: THREE.WebGLRenderer, opts: { quality: "high
     water.getRenderTarget().setSize(Math.round(w * reflScale), Math.round(h * reflScale));
   };
 
-  return { scene, dustScene, moon, moonMat, water, update, setLantern, resize, sets: { slab, path, rack, tsubaRing, rackSpot }, palette: { seam: (b: number) => mixHex("seam", b) } };
+  return { scene, dustScene, moon, moonMat, water, update, setLantern, resize, sets: { slab, path, rack, tsubaRing, rackSpot }, mists, palette: { seam: (b: number) => mixHex("seam", b) } };
 }
