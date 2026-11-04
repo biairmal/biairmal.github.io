@@ -246,7 +246,7 @@ export const Contact = () => (
       shop.
     </p>
     <a
-      href="mailto:bandana.irmal@gmail.com"
+      href="mailto:bandanairmal@gmail.com"
       className="slash inline-flex items-center gap-2.5 self-start border-b border-foreground/25 pb-1.5 text-[22px] font-medium tracking-[-0.02em] xl:gap-4 xl:text-4xl xl:tracking-[-0.03em]"
     >
       <SlashText>bandanairmal@gmail.com</SlashText>

@@ -25,7 +25,7 @@ const Footer = () => {
         <div className="flex flex-col gap-5 md:grid md:grid-cols-3 md:gap-12">
           <div className="flex flex-col gap-2.5">
             <span className={label}>Contact</span>
-            <a href="mailto:bandana.irmal@gmail.com" className={`${underline} text-[15px]`}>
+            <a href="mailto:bandanairmal@gmail.com" className={`${underline} text-[15px]`}>
               bandanairmal@gmail.com
             </a>
           </div>
