@@ -6,7 +6,6 @@
 
 Route: `/v2` (app/v2, components/v2; models in public/v2, made by process-models.mjs). Dark mode first, light mode is the same instant under a white sky.
 No character animation anywhere. He holds a still pose in each beat, and the camera alone hides every pose change.
-Previz: `node design/storyboard-v8/serve.mjs` → http://localhost:8008/design/storyboard-v8/previz.html
 
 ---
 
@@ -84,7 +83,7 @@ adds nothing. Each pose is about 0.25–0.4 MB desktop / 0.1–0.15 MB phone: 20
 (P1, P6) and 1024 for the rest. Each loads only when its section is near.
 The ghost point clouds are sampled from these meshes at load, so they need no extra files.
 
-**Stand-ins until the models exist:** frozen frames of the rigged `ronin.glb` (what the previz uses).
+**Stand-in until P4 exists:** P3 stands at the targets (`WORK_POSE` in components/v2/scene.js).
 
 ---
 
@@ -252,7 +251,7 @@ so the far layers stay light and quiet behind the text.
 
 **Every model is built new, from scratch**, in one shared style: low-poly stylised realism with muted traditional
 Japanese colours and red as the accent. The prompts, palette and triangle budgets are in
-[MESHY_PROMPTS.md](MESHY_PROMPTS.md). The current v6 models are stand-ins in the previz until they are replaced.
+[MESHY_PROMPTS.md](MESHY_PROMPTS.md). Until the lantern and fire basket are generated, /v2 uses the v6 ones (copied into public/v2).
 
 | Asset | Use in v8 |
 |-------|-----------|
@@ -306,4 +305,4 @@ All of them, with the shared style block, the palette and the triangle budgets: 
 5. The weapon rack stands on the house's veranda.
 6. Light mode is overcast daylight: models in mid tones, with a paper scrim behind the text.
 7. Every model is built new in one style: low-poly stylised realism, muted traditional Japanese colours, red accent.
-8. Trees are plain pines with a triangle silhouette (the cloud-pruned shapes in the previz are placeholders).
+8. Trees are plain pines with a triangle silhouette.

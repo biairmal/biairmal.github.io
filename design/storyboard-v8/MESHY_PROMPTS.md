@@ -228,7 +228,7 @@ The fire and its glow are made in code, so the basket must be empty.
 
 ### 4.11 Far pagoda (optional)
 
-It is only ever seen as a silhouette in the distance, so the primitives in the previz work too.
+It is only ever seen as a silhouette in the distance, so primitives work too (what /v2 uses).
 
 > *"a five-storey Japanese pagoda, simple massing, five stacked roofs getting smaller toward the top, a thin spire on
 > top, very simple, dark wood and grey roofs, about 30 m tall,"* + style block.

@@ -4,7 +4,7 @@
 // Nothing on him moves: each beat is a separate static pose, swapped while the camera hides it. Time is one uniform
 // that slows to a stop as you start to scroll, is scrubbed by the scroll while frozen, and resumes at Contact.
 //
-// Plain JS, ported from the previz (design/storyboard-v8/previz.html). Models live in public/v2.
+// Plain JS, ported from the storyboard's blockout previz. Models live in public/v2.
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
